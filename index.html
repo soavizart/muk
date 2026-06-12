@@ -38,6 +38,14 @@
     font-size:9px; letter-spacing:0.2em; white-space:nowrap;
     opacity:0.55;
   }
+  #credit {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    font-family:'IBM Plex Mono', monospace; font-weight:500;
+    font-size:10px; letter-spacing:0.22em; white-space:nowrap;
+    color:#141416; opacity:0.9;
+    text-shadow:0 0 4px #F7F4ED, 0 0 9px #F7F4ED, 0 0 14px rgba(247,244,237,0.9);
+    pointer-events:none; user-select:none; z-index:50;
+  }
   #stats {
     position:fixed; right:18px; bottom:14px;
     font-family:'IBM Plex Mono', monospace; font-size:9px;
@@ -93,12 +101,14 @@
   }
   #title.show { opacity:1; }
   #title .hj {
-    font-family:'Noto Serif KR', serif; font-weight:300;
-    font-size:18px; letter-spacing:0.35em; text-indent:0.35em; color:#56565C;
+    font-family:'Noto Serif KR', serif; font-weight:400;
+    font-size:26px; letter-spacing:0.35em; text-indent:0.35em; color:#141416;
+    text-shadow:0 0 5px #F7F4ED, 0 0 10px #F7F4ED, 0 0 16px rgba(247,244,237,0.9);
   }
   #title .kr {
-    margin-top:5px; font-family:'IBM Plex Mono', monospace;
-    font-size:10px; letter-spacing:0.3em; text-indent:0.3em; color:#9C9CA3;
+    margin-top:7px; font-family:'IBM Plex Mono', monospace; font-weight:500;
+    font-size:13px; letter-spacing:0.3em; text-indent:0.3em; color:#2B2B2E;
+    text-shadow:0 0 4px #F7F4ED, 0 0 9px #F7F4ED, 0 0 14px rgba(247,244,237,0.9);
   }
   #palette {
     position:fixed; right:20px; top:50%; transform:translateY(-50%);
@@ -188,7 +198,7 @@
   body.share #timeline,
   body.share #title,
   body.share #brand .s { opacity:0 !important; pointer-events:none !important; }
-  body.share #danchong { opacity:0.40; }
+  body.share #danchong { opacity:0.96 !important; }
   body.share #brand .t { color:#56565C; opacity:0.9; }
   body.share #poem { display:none !important; }
   @media (max-width: 768px) {
@@ -224,7 +234,8 @@
 <body>
 <canvas id="c"></canvas>
 <div id="danchong"></div>
-<div id="brand"><div class="t">墨香</div><div class="s">SOAVIZ AI STUDIO</div></div>
+<div id="brand"><div class="t">墨香</div></div>
+<div id="credit">SOAVIZ AI STUDIO</div>
 <div id="stats"></div>
 <div id="save">保存 — save</div>
 <div id="share">共有 — share</div>
