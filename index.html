@@ -181,6 +181,20 @@
   }
   #brushMode:hover { color:#56565C; }
   #brushMode.on { color:#141416; transform:scale(1.12); }
+  #brushFx {
+    position:fixed; right:18px; bottom:122px;
+    display:none; flex-direction:column; gap:8px; align-items:flex-end;
+    z-index:40; user-select:none;
+  }
+  #brushFx.show { display:flex; }
+  #brushFx button {
+    background:none; border:none; padding:0; cursor:pointer;
+    font-family:'Noto Serif KR', serif; font-size:14px; letter-spacing:0.12em;
+    color:#9C9CA3; transition:color 0.3s ease, transform 0.3s ease;
+    text-shadow:0 0 3px #fff, 0 0 7px #fff, 0 0 12px rgba(255,255,255,0.9);
+  }
+  #brushFx button:hover { color:#56565C; }
+  #brushFx button.active { color:#141416; font-weight:700; transform:scale(1.1); }
   #zoomWrap { position:fixed; left:54px; bottom:108px; width:28px; height:104px; }
   #zoom { position:absolute; left:50%; top:50%; width:100px;
     transform:translate(-50%,-50%) rotate(-90deg);
@@ -313,6 +327,13 @@
     <circle cx="22.2" cy="6" r="1.5" fill="currentColor" opacity="0.5"/>
   </svg>
 </button>
+<div id="brushFx">
+  <button data-fx="auto" class="active" title="붓결 — 속도에 따라 자동">붓결</button>
+  <button data-fx="balmuk" title="발묵 — 부드럽게 번짐">발묵</button>
+  <button data-fx="galpil" title="갈필 — 거친 비백">갈필</button>
+  <button data-fx="nongmuk" title="농묵 — 짙고 무겁게">농묵</button>
+  <button data-fx="dammuk" title="담묵 — 옅게">담묵</button>
+</div>
 <audio id="bgmAudio" preload="none"></audio>
 <script>
 "use strict";
@@ -987,6 +1008,7 @@ canvas.addEventListener("pointercancel", releasePointer);
 
 /* 마우스 호버: 평소엔 기류, 붓 모드면 커서 이동만으로 직접 그리기 */
 let brushMode = false;
+let brushFx = "auto";   // 붓 효과: auto(붓결)/balmuk(발묵)/galpil(갈필)/nongmuk(농묵)/dammuk(담묵)
 let hoverPrev = null;
 canvas.addEventListener("pointermove", e => {
   if (e.buttons !== 0 || pointers.size > 0) return;   // 드래그 중이면 기존 획 로직이 처리
@@ -997,12 +1019,19 @@ canvas.addEventListener("pointermove", e => {
   const dist = Math.hypot(dx, dy);
   if (dist < 6e-4) return;
   if (brushMode){
-    // 붓 모드: 커서 이동만으로 직접 그리기 (현재 선택된 먹색·농담 적용)
+    // 붓 모드: 커서 이동만으로 직접 그리기 (먹색·농담 + 붓 효과 적용)
     const dtv = Math.min(Math.max(now - hoverPrev.t, 4), 50) / 1000;
     const v = dist / dtv;
-    const wet = 1 - smooth01(CFG.WET_LO, CFG.WET_HI, v);
-    const dry = smooth01(CFG.DRY_LO, CFG.DRY_HI, v);
-    splats.push({ x, y, dx, dy, dirX:dx / dist, dirY:dy / dist, wet, dry, seed:hoverPrev.seed });
+    let wet, dry, amp = 1.0, rad = 1.0;
+    switch (brushFx){
+      case "balmuk":  wet = 1.0;  dry = 0.0; amp = 1.15; rad = 1.25; break;  // 발묵: 부드럽게 번짐
+      case "galpil":  wet = 0.06; dry = 1.0; amp = 0.85; rad = 0.85; break;  // 갈필: 거친 비백
+      case "nongmuk": wet = 0.85; dry = 0.0; amp = 1.7;  rad = 1.1;  break;  // 농묵: 짙고 무겁게
+      case "dammuk":  wet = 0.6;  dry = 0.0; amp = 0.4;  rad = 1.05; break;  // 담묵: 옅게
+      default:        wet = 1 - smooth01(CFG.WET_LO, CFG.WET_HI, v);          // 붓결: 속도 기반
+                      dry = smooth01(CFG.DRY_LO, CFG.DRY_HI, v);
+    }
+    splats.push({ x, y, dx, dy, dirX:dx / dist, dirY:dy / dist, wet, dry, amp, rad, seed:hoverPrev.seed });
     userHasDrawn = true;
     lastInputTime = now;
   } else {
@@ -2092,14 +2121,23 @@ applyCanvasScale();
 
 // 붓 모드: 켜면 커서 이동만으로 직접 그리기. 자동 루프·자동 시작 정지, 팔레트 노출
 const brushBtn = document.getElementById("brushMode");
+const brushFxEl = document.getElementById("brushFx");
 brushBtn.addEventListener("click", () => {
   brushMode = !brushMode;
   brushBtn.classList.toggle("on", brushMode);
+  brushFxEl.classList.toggle("show", brushMode);   // 붓 효과 선택기 노출
   if (brushMode){
     clearTimeout(paint.loopT);
     paint.started = true;   // 자동 시작/루프 억제
     if (document.body.classList.contains("share")) shareModeBtn.click();  // 팔레트 보이게 전시모드 해제
   }
+});
+brushFxEl.querySelectorAll("button").forEach(b => {
+  b.addEventListener("click", () => {
+    brushFx = b.dataset.fx;
+    brushFxEl.querySelectorAll("button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+  });
 });
 
 const bgmBtn = document.getElementById("bgm");
