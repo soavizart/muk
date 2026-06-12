@@ -199,7 +199,6 @@
   body.share #brand .s { opacity:0 !important; pointer-events:none !important; }
   body.share #danchong { opacity:0.96 !important; }
   body.share #brand .t { color:#56565C; opacity:0.9; }
-  body.share #poem { display:none !important; }
   @media (max-width: 768px) {
     body.share #c { transform:scale(1.08); }
     body.share #c { transform:scale(1.08); }
@@ -216,6 +215,8 @@
   }
   #poem .ln.solo { display:block; animation:poemColIn 1.1s ease forwards; }
   #poem .ln.solo.fade { opacity:0; transition:opacity 1.2s ease; }
+  /* 완료 시: 전체 시를 세로 컬럼 전체로 노출 */
+  #poem .ln.allcol { display:block; animation:poemColIn 1.1s ease forwards; }
   @keyframes poemColIn {
     from { opacity:0; transform:translateX(-8px); filter:blur(3px); }
     to   { opacity:1; transform:translateX(0);    filter:blur(0); }
@@ -956,6 +957,30 @@ function releasePointer(e){
 }
 canvas.addEventListener("pointerup", releasePointer);
 canvas.addEventListener("pointercancel", releasePointer);
+
+/* 마우스 호버: 버튼을 누르지 않고 커서만 움직여도 먹이 넓게 번지는 배경 */
+let hoverPrev = null;
+canvas.addEventListener("pointermove", e => {
+  if (e.buttons !== 0 || pointers.size > 0) return;   // 드래그 중이면 기존 획 로직이 처리
+  const [x, y] = uvFromEvent(e);
+  const now = performance.now();
+  if (!hoverPrev){ hoverPrev = { x, y, t:now, seed:Math.random() * 100 }; return; }
+  const dx = x - hoverPrev.x, dy = y - hoverPrev.y;
+  const dist = Math.hypot(dx, dy);
+  if (dist < 6e-4) return;
+  // 넓은 반경 + 옅은 침착량 → 부드럽게 번지는 배경 먹
+  splats.push({
+    x, y,
+    dx: dx * 0.55, dy: dy * 0.55,
+    dirX: dx / dist, dirY: dy / dist,
+    wet: 1, dry: 0, seed: hoverPrev.seed,
+    absAmt: 0.0075,   // 옅게
+    rad: 9.0,         // 넓게
+    fmul: 0.45
+  });
+  hoverPrev = { x, y, t:now, seed:hoverPrev.seed };
+  lastInputTime = now;
+});
 
 function applySplat(s){
   // 속도장 force 주입
@@ -1745,6 +1770,7 @@ function markActive(key){
 /* --- 시퀀스 시작: 기존 작품이 있으면 번지며 사라진 뒤 새 폭 시작 --- */
 function startPainting(key){
   if (paint.active || paint.dissolving) return;
+  clearTimeout(paint.loopT);   // 대기 중인 자동 루프 타이머 취소(수동 선택/재진입 대비)
   const art = ARTWORKS[key];
   if (!art || !art.plan) return;
   markActive(key);
@@ -1833,6 +1859,12 @@ function paintTick(now, dt){
     setTimeout(() => { setProgress(0); }, 2200);
     setTimeout(() => shareEl.classList.add("show"), 1400);   // 공유 버튼 등장
     setTimeout(() => { if (!document.body.classList.contains("share")) shareModeBtn.click(); }, 2000);
+    // 완료 10초 후 → 다음 작품으로 자동 전환 (무한 루프)
+    const loopKeys = Object.keys(ARTWORKS);
+    const ci = loopKeys.indexOf(paint.current);
+    const nextKey = loopKeys[(ci + 1) % loopKeys.length];
+    clearTimeout(paint.loopT);
+    paint.loopT = setTimeout(() => startPainting(nextKey), 10000);
     return;
   }
   if (s.pass !== paint.passIdx){ paint.passIdx = s.pass; paint.pauseUntil = now + 1100; return; }
@@ -1932,9 +1964,9 @@ function audioTick(){
   const act = 1 - Math.exp(-snd.e * 0.9);
   const dry = snd.n ? snd.dry / snd.n : 0;
   const wet = snd.n ? snd.wet / snd.n : 0;
-  audio.gHiss.gain.setTargetAtTime(act * (0.028 + 0.09 * dry), t, snd.e > 0 ? 0.05 : 0.14);
-  audio.gWash.gain.setTargetAtTime(act * (0.016 + 0.05 * wet), t, snd.e > 0 ? 0.07 : 0.16);
-  audio.bp.frequency.setTargetAtTime(1300 + 2600 * dry + 400 * Math.random(), t, 0.06);
+  // 붓 마찰 소리(사각거림) 비활성화 — 항상 무음 (BGM·물방울·도장음은 유지)
+  audio.gHiss.gain.setTargetAtTime(0, t, 0.12);
+  audio.gWash.gain.setTargetAtTime(0, t, 0.12);
   snd.e = 0; snd.dry = 0; snd.wet = 0; snd.n = 0;
 }
 
@@ -2102,14 +2134,22 @@ const PoemOverlay = {
   },
   showSolo(i){
     const cols = poemEl.querySelectorAll(".ln");
-    cols.forEach(c => c.classList.remove("solo", "fade"));
+    cols.forEach(c => c.classList.remove("solo", "fade", "allcol"));
     const col = cols[i];
     if (!col) return;
     col.classList.add("solo");
     clearTimeout(this._soloT);
     this._soloT = setTimeout(() => col.classList.add("fade"), 3000);  // 3초 후 소멸
   },
-  revealAll(){ this.lines.forEach(chars => chars.forEach(c => c.classList.add("show"))); },
+  revealAll(){
+    // 완료 시: 미리 만들어 둔 전체 시를 좌측에 세로 컬럼 전체로 노출 (유지)
+    clearTimeout(this._soloT);
+    poemEl.querySelectorAll(".ln").forEach(c => {
+      c.classList.remove("solo", "fade");
+      c.classList.add("allcol");
+    });
+    poemEl.classList.add("show");
+  },
   clear(){ poemEl.classList.remove("show"); }
 };
 const palEl = document.getElementById("palette");
