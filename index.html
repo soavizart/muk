@@ -1432,6 +1432,26 @@ saveEl.addEventListener("click", () => {
   }, "image/png");
 });
 
+// ── 포트폴리오 갤러리 내보내기 (?gallery=1) ──
+// 10폭을 차례로 그리고, 각 완성 순간 캔버스를 고화질 PNG로 자동 저장
+const galleryExport = new URLSearchParams(location.search).has("gallery");
+const exported = new Set();
+function exportCurrentPNG(){
+  const art = ARTWORKS[paint.current];
+  if (!art) return;
+  setTimeout(() => {
+    render(performance.now() / 1000);   // 최종 프레임 렌더 후 같은 태스크에서 캡처
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "muk-" + art.idx + "-" + art.kor + ".png";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    }, "image/png");
+  }, 1600);   // 먹이 가라앉을 시간
+}
+
 // 인장 글꼴 선로딩 (Noto Serif KR 700)
 if (document.fonts && document.fonts.load)
   document.fonts.load("700 100px 'Noto Serif KR'").catch(() => {});
@@ -1929,7 +1949,15 @@ function paintTick(now, dt){
     const ci = loopKeys.indexOf(paint.current);
     const nextKey = loopKeys[(ci + 1) % loopKeys.length];
     clearTimeout(paint.loopT);
-    if (!brushMode) paint.loopT = setTimeout(() => startPainting(nextKey), 10000);
+    if (galleryExport){
+      // 포트폴리오 모드: 완성 PNG 저장 후 빠르게 다음 폭으로 (10폭 다 모으면 정지)
+      exportCurrentPNG();
+      exported.add(paint.current);
+      if (exported.size < loopKeys.length)
+        paint.loopT = setTimeout(() => startPainting(nextKey), 3200);
+    } else if (!brushMode){
+      paint.loopT = setTimeout(() => startPainting(nextKey), 10000);
+    }
     return;
   }
   if (s.pass !== paint.passIdx){ paint.passIdx = s.pass; paint.pauseUntil = now + 1100; return; }
