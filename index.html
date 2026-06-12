@@ -979,18 +979,16 @@ canvas.addEventListener("pointermove", e => {
   const dx = x - hoverPrev.x, dy = y - hoverPrev.y;
   const dist = Math.hypot(dx, dy);
   if (dist < 6e-4) return;
-  // 넓은 반경 + 옅은 침착량 → 부드럽게 번지는 배경 먹
+  // 기류만: 넓은 반경의 속도장을 주입해 기존 먹·안개를 휘젓는다 (새 먹은 방출하지 않음)
   splats.push({
     x, y,
-    dx: dx * 0.55, dy: dy * 0.55,
+    dx, dy,
     dirX: dx / dist, dirY: dy / dist,
-    wet: 1, dry: 0, seed: hoverPrev.seed,
-    absAmt: 0.0075,   // 옅게
-    rad: 9.0,         // 넓게
-    fmul: 0.45
+    velOnly: true,    // 먹 추가 없음
+    vrad: 0.024,      // 넓은 흐름 반경
+    fmul: 0.7
   });
   hoverPrev = { x, y, t:now, seed:hoverPrev.seed };
-  lastInputTime = now;
 });
 
 function applySplat(s){
@@ -1001,9 +999,11 @@ function applySplat(s){
   gl.uniform2f(progSplat.u.uPoint, s.x, s.y);
   const fm = s.fmul !== undefined ? s.fmul : 1.0;
   gl.uniform3f(progSplat.u.uColor, s.dx * CFG.SPLAT_FORCE * fm, s.dy * CFG.SPLAT_FORCE * fm, 0.0);
-  gl.uniform1f(progSplat.u.uRadius, CFG.RADIUS_V);
+  gl.uniform1f(progSplat.u.uRadius, s.vrad !== undefined ? s.vrad : CFG.RADIUS_V);
   blit(velocity.write);
   velocity.swap();
+
+  if (s.velOnly) return;   // 기류만 주입(먹 방출 없음) — 호버 커서 효과
 
   // 잉크: 발묵(느림) ↔ 갈필(빠름) — 속도에 따라 연속적으로 섞임
   const amt = s.absAmt !== undefined
