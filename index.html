@@ -229,6 +229,17 @@
       color:rgba(24,24,24,0.46); max-height:38vh;
     }
   }
+  /* 모든 글자에 흰색 후광 — 배경에 먹이 깔려도 또렷하게 */
+  #brand .t, #brand .s, #credit,
+  #title .hj, #title .kr,
+  #invoke, #invoke span, #save, #share,
+  #tlPct, #stats, #poem .ln {
+    text-shadow:
+      0 0 3px #fff,
+      0 0 7px #fff,
+      0 0 13px rgba(255,255,255,0.95),
+      0 0 22px rgba(255,255,255,0.85) !important;
+  }
 </style>
 </head>
 <body>
