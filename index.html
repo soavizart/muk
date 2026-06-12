@@ -53,7 +53,7 @@
     pointer-events:none; user-select:none;
   }
   #save {
-    position:fixed; bottom:26px; left:calc(50% - 96px); transform:translateX(-50%);
+    position:fixed; bottom:26px; right:28px;
     font-family:'IBM Plex Mono', monospace; font-size:11px;
     letter-spacing:0.15em; color:#9C9CA3;
     text-decoration:underline; text-underline-offset:4px;
@@ -62,7 +62,7 @@
   }
   #save.show { opacity:1; pointer-events:auto; }
   #share {
-    position:fixed; bottom:26px; left:calc(50% + 96px); transform:translateX(-50%);
+    position:fixed; bottom:50px; right:28px;
     font-family:'IBM Plex Mono', monospace; font-size:11px;
     letter-spacing:0.15em; color:#9C9CA3;
     text-decoration:underline; text-underline-offset:4px;
@@ -172,7 +172,7 @@
   }
   #bgm:hover { color:#56565C; }
   #bgm.on { color:#8F3B2E; }   /* 재생 중: 단청 적색 */
-  #zoomWrap { position:fixed; left:20px; bottom:108px; width:28px; height:104px; }
+  #zoomWrap { position:fixed; left:54px; bottom:108px; width:28px; height:104px; }
   #zoom { position:absolute; left:50%; top:50%; width:100px;
     transform:translate(-50%,-50%) rotate(-90deg);
     -webkit-appearance:none; appearance:none; background:transparent; cursor:pointer; margin:0; }
@@ -196,7 +196,6 @@
   body.share #toneWrap,
   body.share #paperPal,
   body.share #timeline,
-  body.share #title,
   body.share #brand .s { opacity:0 !important; pointer-events:none !important; }
   body.share #danchong { opacity:0.96 !important; }
   body.share #brand .t { color:#56565C; opacity:0.9; }
