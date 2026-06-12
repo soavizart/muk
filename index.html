@@ -267,7 +267,7 @@
 <div id="toneWrap"><input type="range" id="tone" min="45" max="170" value="100"></div>
 <div id="poem"></div>
 <div id="paperPal"></div>
-<div id="zoomWrap"><input type="range" id="zoom" min="10" max="100" value="100"></div>
+<div id="zoomWrap"><input type="range" id="zoom" min="50" max="200" value="100"></div>
 <button id="shareMode" title="전시 모드" aria-label="전시 모드">
   <svg viewBox="0 0 28 28" width="22" height="22">
     <rect x="3.2" y="3.2" width="21.6" height="21.6" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
@@ -1698,7 +1698,8 @@ function planStrokes(d, W, H, target){
   });
 
   /* ---- 시간 예산 → 속도, 메타데이터 ---- */
-  var budgets = { 1:10, 2:7, 3:13, 4:12, 5:13, 6:5 };
+  // 녹화용: 배경·외곽(1~3)을 앞당겨 첫 ~18초 안에 머리·수염·몸통 S커브가 읽히도록
+  var budgets = { 1:4, 2:3, 3:7, 4:10, 5:11, 6:5 };
   var base    = { 1:0.10, 2:0.14, 3:0.16, 4:0.30, 5:0.34, 6:0.06 };
   var sums = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0 };
   var aw = W / H;
@@ -2008,7 +2009,7 @@ PAPER_COLORS.forEach((c, i) => {
 const shareModeBtn = document.getElementById("shareMode");
 let zoomScale = 1.0;
 function applyCanvasScale(){
-  const base = document.body.classList.contains("share") ? 1.12 : 1.06;
+  const base = document.body.classList.contains("share") ? 1.12 : 1.08;
   canvas.style.transform = "scale(" + (base * zoomScale).toFixed(3) + ")";
 }
 shareModeBtn.addEventListener("click", () => {
@@ -2203,10 +2204,9 @@ function loop(now){
         " · " + fpsM.fps + "fps";
     // 海嶽 트리거: 12초 무입력 + 잉크 거의 없음
     invokeEl.classList.toggle("show", !paint.active && !seal.frozen && now > 2500);
-    // 로드 8초 후 자동 시작 — 10폭 중 무작위. 한자 버튼으로 즉시 선택 가능
-    if (!paint.started && !seal.frozen && now > 8000){
-      const ks = Object.keys(ARTWORKS).filter(k => ARTWORKS[k].plan);
-      if (ks.length) startPainting(ks[Math.floor(Math.random() * ks.length)]);
+    // 로드 0.6초 후 자동 시작 — 龍(雲龍昇天) 고정. plan 준비되면 즉시 시작. 한자 버튼으로 변경 가능
+    if (!paint.started && !seal.frozen && now > 600 && ARTWORKS.dragon && ARTWORKS.dragon.plan){
+      startPainting("dragon");
     }
   }
 
