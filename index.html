@@ -2394,7 +2394,7 @@ function loop(now){
         " · ink " + inkAmount.toLocaleString("en-US") +
         " · " + fpsM.fps + "fps";
     // 海嶽 트리거: 12초 무입력 + 잉크 거의 없음
-    invokeEl.classList.toggle("show", !paint.active && !seal.frozen && now > 2500);
+    invokeEl.classList.toggle("show", !seal.frozen && now > 2500);   // 그리는 중에도 하단 메뉴 유지
     // 로드 0.6초 후 자동 시작 — 龍(雲龍昇天) 고정. plan 준비되면 즉시 시작. 한자 버튼으로 변경 가능
     if (!paint.started && !seal.frozen && !brushMode && now > 600 && ARTWORKS.dragon && ARTWORKS.dragon.plan){
       startPainting("dragon");
